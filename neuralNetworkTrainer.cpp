@@ -74,6 +74,31 @@ void neuralNetworkTrainer::setStoppingConditions( int mEpochs, double dAccuracy 
 	desiredAccuracy = dAccuracy;	
 }
 /*******************************************************************
+* Enable training logging
+********************************************************************/
+void neuralNetworkTrainer::enableLogging(const char* filename, int resolution = 1)
+{
+	//create log file 
+	if (!logFile.is_open())
+	{
+		logFile.open(filename, ios::out);
+
+		if (logFile.is_open())
+		{
+			//write log file header
+			logFile << "Epoch,Training Set Accuracy, Generalization Set Accuracy,Training Set MSE, Generalization Set MSE" << endl;
+
+			//enable logging
+			loggingEnabled = true;
+
+			//resolution setting;
+			logResolution = resolution;
+			lastEpochLogged = -resolution;
+		}
+	}
+}
+
+/*******************************************************************
 * calculate output error gradient
 ********************************************************************/
 inline double neuralNetworkTrainer::getOutputErrorGradient(double desiredValue, double outputValue)
@@ -125,11 +150,11 @@ void neuralNetworkTrainer::trainNetwork( trainingDataSet* tSet )
 		generalizationSetMSE = NN->getSetMSE( tSet->generalizationSet );
 
 		//Log Training results
-		/*if ( loggingEnabled && logFile.is_open() && ( epoch - lastEpochLogged == logResolution ) ) 
+		if ( loggingEnabled && logFile.is_open() && ( epoch - lastEpochLogged == logResolution ) ) 
 		{
 			logFile << epoch << "," << trainingSetAccuracy << "," << generalizationSetAccuracy << "," << trainingSetMSE << "," << generalizationSetMSE << endl;
 			lastEpochLogged = epoch;
-		}*/
+		}
 		
 		cout << "Epoch :" << epoch;
 		cout << " TSet Acc:" << trainingSetAccuracy << "%, MSE: " << trainingSetMSE;
@@ -155,13 +180,16 @@ void neuralNetworkTrainer::trainNetwork( trainingDataSet* tSet )
 	validationSetMSE = NN->getSetMSE(tSet->validationSet);
 
 	//log end
-	//logFile << epoch << "," << trainingSetAccuracy << "," << generalizationSetAccuracy << "," << trainingSetMSE << "," << generalizationSetMSE << endl << endl;
-	//logFile << "Training Complete!!! - > Elapsed Epochs: " << epoch << " Validation Set Accuracy: " << validationSetAccuracy << " Validation Set MSE: " << validationSetMSE << endl;
-			
+	logFile << epoch << "," << trainingSetAccuracy << "," << generalizationSetAccuracy << "," << trainingSetMSE << "," << generalizationSetMSE << endl << endl;
+	logFile << "Training Complete!!! - > Elapsed Epochs: " << epoch << " Validation Set Accuracy: " << validationSetAccuracy << " Validation Set MSE: " << validationSetMSE << endl;
+	logFile.close();
+
 	//out validation accuracy and MSE
 	cout << endl << "Training Complete!!! - > Elapsed Epochs: " << epoch << endl;
 	cout << " Validation Set Accuracy: " << validationSetAccuracy << endl;
 	cout << " Validation Set MSE: " << validationSetMSE << endl << endl;
+
+	cout << std::fixed << std::setprecision(3) << NN->wHiddenOutput[0][0] << " " << NN->wHiddenOutput[0][1] << " " << NN->wHiddenOutput[0][2] << " " << NN->wHiddenOutput[1][0] << " " << NN->wHiddenOutput[1][2] << " " << NN->wHiddenOutput[1][3] << " ";
 }
 /*******************************************************************
 * Run a single training epoch

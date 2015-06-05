@@ -50,8 +50,8 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 	tSet.clear();
 
 	unsigned int inputNeuronsSize = 0;
-	unsigned int posSamplesNum = 0;
-	unsigned int negSamplesNum = 0;
+	unsigned int number_of_posSamples = 0;
+	unsigned int number_of_negSamples = 0;
 
 	//set number of inputs and outputs
 	nInputs = nI;
@@ -66,39 +66,40 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 
 	// training set
 	//--------------------------------------------------------------------------------------------------------
-	// following steps:
-	// 1) select path where will be stored the training set and create a vector of strings
+	// 1 - select path where will be stored the training set and create a vector of strings
+	//--------------------------------------------------------------------------------------------------------
 	// will create a text file where will be listed every file
 	system("dir Data\\70X134H96\\Test\\pos\\bmp\\ /B > pic_pos.txt");
 
 	// name of this text file needs to be same as the above one
 	ifstream myfile("pic_pos.txt");
 
-	if (myfile.is_open())
+	try
 	{
-		while (getline(myfile, line))
+		if (myfile.is_open())
 		{
-			// position of ".bmp" in str
-			position = line.find(".bmp");
-
-			// maximum value of unsigned long is returned in case of line.find(".bmp") is not fond 
-			if (position != MAX)
+			while (getline(myfile, line) && (number_of_posSamples < limitPos))
 			{
-				//cout << line << '\n';
-				//copy(line.begin(), (line.size() >= MAX_CHAR ? line.begin() + MAX_CHAR : line.end()), cstr);
-				tSet.picNames.push_back(line);
-				tSet.pos.push_back(true);
-				posSamplesNum++;
-				//tSet.picNames.insert(tSet.picNames.end(), cstr);
-				//cout << cstr << '\n';
-			}
-		}
-		myfile.close();
-	}
+				// position of ".bmp" in str
+				position = line.find(".bmp");
 
-	else
+				// maximum value of unsigned long is returned in case of line.find(".bmp") is not fond 
+				if (position != MAX)
+				{
+					//cout << line << '\n';
+					tSet.picNames.push_back(filenamePos + line);
+					tSet.pos.push_back(true);
+					number_of_posSamples++;
+					//tSet.picNames.insert(tSet.picNames.end(), cstr);
+					//cout << cstr << '\n';
+				}
+			}
+			myfile.close();
+		}
+	}
+	catch (int e)
 	{
-		cout << "Unable to open file";
+		cout << "An exception occurred. Exception Nr. " << e << endl;
 	}
 
 	// negative dataset
@@ -107,31 +108,32 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 	// name of this text file needs to be same as the above one
 	ifstream myfileNeg("pic_neg.txt");
 
-	if (myfileNeg.is_open())
+	try
 	{
-		while (getline(myfileNeg, lineNeg))
+		if (myfileNeg.is_open())
 		{
-			// position of ".bmp" in str
-			position = lineNeg.find(".bmp");
-
-			// maximum value of unsigned long is returned in case of line.find(".bmp") is not fond 
-			if (position != MAX)
+			while (getline(myfileNeg, lineNeg) && (number_of_negSamples < limitNeg))
 			{
-				//cout << line << '\n';
-				//copy(line.begin(), (line.size() >= MAX_CHAR ? line.begin() + MAX_CHAR : line.end()), cstr);
-				tSet.picNames.push_back(lineNeg);
-				tSet.pos.push_back(false);
-				negSamplesNum++;
-				//tSet.picNames.insert(tSet.picNames.end(), cstr);
-				//cout << cstr << '\n';
-			}
-		}
-		myfile.close();
-	}
+				// position of ".bmp" in str
+				position = lineNeg.find(".bmp");
 
-	else
+				// maximum value of unsigned long is returned in case of line.find(".bmp") is not fond 
+				if (position != MAX)
+				{
+					//cout << line << '\n';
+					tSet.picNames.push_back(filenameNeg + lineNeg);
+					tSet.pos.push_back(false);
+					number_of_negSamples++;
+					//tSet.picNames.insert(tSet.picNames.end(), cstr);
+					//cout << cstr << '\n';
+				}
+			}
+			myfile.close();
+		}
+	}
+	catch (int e)
 	{
-		cout << "Unable to open file";
+		cout << "An exception occurred. Exception Nr. " << e << endl;
 	}
 
 	/*for (int a = 0; a < tSet.picNames.size(); a++)
@@ -140,17 +142,13 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 	}
 
 	system("PAUSE");*/
-	// 2) load a picture in grey scale vector
-	//cout << tSet.picNames.size() << '\n';
-	// picture number limitation
-	unsigned int limitation = limitPos + limitNeg;
-	if ((limitPos > 0) && (limitNeg > 0)) limitation = limitPos + limitNeg;
-	else limitation = tSet.picNames.size();
-
+	//--------------------------------------------------------------------------------------------------------
+	// 2 - Load a picture in grey scale vector
+	//--------------------------------------------------------------------------------------------------------		
 	int posPosition = 0;
 	int indexForCout = 0;
 	// main loop of picture loading
-	for (int i = 0; i < (int)limitation; i++)
+	for (int i = 0; i < (int)tSet.picNames.size(); i++)
 	{
 		// START - load an image using the CImg 
 
@@ -159,22 +157,10 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 		size_t const MAX_CHAR = 100; // maximum number of chars
 		char cstr[MAX_CHAR] = { 0 };
 		char buffer[MAX_CHAR] = { 0 }; // <- danger, only storage for 256 characters.
-		if (i > (limitPos-1))
-		{
-			copy(tSet.picNames[posPosition + posSamplesNum].begin(), (tSet.picNames[posPosition + posSamplesNum].size() >= MAX_CHAR ? tSet.picNames[posPosition + posSamplesNum].begin() + MAX_CHAR : tSet.picNames[posPosition + posSamplesNum].end()), cstr);
-			posPosition++;
-			strncpy(buffer, filenameNeg, sizeof(buffer));
-			strncat(buffer, cstr, sizeof(buffer));
-			indexForCout = posPosition + posSamplesNum;
-		}
-		else
-		{
-			copy(tSet.picNames[i].begin(), (tSet.picNames[i].size() >= MAX_CHAR ? tSet.picNames[i].begin() + MAX_CHAR : tSet.picNames[i].end()), cstr);
-			strncpy(buffer, filenamePos, sizeof(buffer));
-			strncat(buffer, cstr, sizeof(buffer));
-			indexForCout = i;
-		}
-		//copy(tSet.picNames[0].begin(), (tSet.picNames[0].size() >= MAX_CHAR ? tSet.picNames[0].begin() + MAX_CHAR : tSet.picNames[0].end()), cstr);
+
+		copy(tSet.picNames[i].begin(), (tSet.picNames[i].size() >= MAX_CHAR ? tSet.picNames[i].begin() + MAX_CHAR : tSet.picNames[i].end()), cstr);
+		strncat(buffer, cstr, sizeof(buffer));
+		indexForCout = i;
 
 		//cout << buffer << endl;
 		CImg<unsigned char> image(buffer);
@@ -202,12 +188,10 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 		{
 			for (int indexD = 0; indexD < height; indexD++)
 			{
-
 				//Return a pointer to a located pixel value. 
 				r = image(indexC, indexD, 0, 0); // First channel RED
 				g = image(indexC, indexD, 0, 1); // Second channel GREEN
 				b = image(indexC, indexD, 0, 2); // Third channel BLUE
-
 
 				//PAL and NTSC
 				//Y = 0.299*R + 0.587*G + 0.114*B
@@ -228,15 +212,17 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 			}
 		}
 
-		// 3) HOG transformation
-		HoG.setPicXsize(width);
-		HoG.setPicYsize(height);
+		//--------------------------------------------------------------------------------------------------------
+		// 3 - HOG transformation
+		//--------------------------------------------------------------------------------------------------------
+		HoG.setWinXsize(width);
+		HoG.setWinYsize(height);
 
-		vector<vector<unsigned char> > hogMatrixMag(((height / HoG.pixelStep) - HoG.getWinYsize()), vector<unsigned char>((width / HoG.pixelStep) - HoG.getWinXsize()));
-		vector<vector<int> > hogMatrixAng(((height / HoG.pixelStep) - HoG.getWinYsize()), vector<int>((width / HoG.pixelStep) - HoG.getWinXsize()));
+		vector<vector<unsigned char> > hogMatrixMag( HoG.getBinY(), vector<unsigned char>(HoG.getBinX()) );
+		//vector<vector<int> > hogMatrixAng( HoG.getBinY(), vector<int>(HoG.getBinX()) );
 
 		// calculating the HOG
-		HoG.getSlidingWindows(testArray, hogMatrixMag, hogMatrixAng);
+		HoG.getDescriptor(testArray, hogMatrixMag);
 
 		// distinguish between positive and negative
 		vector<double> v_target(nTargets);
@@ -246,15 +232,15 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 			v_target[1] = 1.0;
 			v_target[2] = 1.0;
 			// push back the new POSITIVE dataEntry - shall be thinkable to somehow straighten the vectors
-			dataPos.push_back(new dataEntry(hogMatrixAng, v_target));
+			dataPos.push_back(new dataEntry(hogMatrixMag, v_target));
 		}
 		else
 		{
-			v_target[0] = 0.0;
-			v_target[1] = 0.0;
-			v_target[2] = 0.0;
+			v_target[0] = 0.5;
+			v_target[1] = 0.5;
+			v_target[2] = 0.5;
 			// push back the new NEGATIVE dataEntry - shall be thinkable to somehow straighten the vectors
-			dataNeg.push_back(new dataEntry(hogMatrixAng, v_target));
+			dataNeg.push_back(new dataEntry(hogMatrixMag, v_target));
 		}
 
 		cout << i << ": Loading of file " << tSet.picNames[indexForCout] << " is done." << '\n';
@@ -263,13 +249,21 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 	//--------------------------------------------------------------------------------------------------------
 	// Spliting the data set - 60% TrainigSet, 20% GeneralizationSet, 20% TestingSet
 	//--------------------------------------------------------------------------------------------------------
-	cout << "Complately data size is: " << dataPos.size() << " of pictures." << endl;
-	trainingDataEndIndex = (int)(0.6 * dataPos.size());
-	cout << "Training Data set " << trainingDataEndIndex << endl;
+	cout << endl << "Complately data size is: " << dataPos.size() << " pictures." << endl;
 
+	trainingDataEndIndex = (int)(0.6 * dataPos.size());
 	int gSize = (int)(ceil(0.2 * dataPos.size()));
 	int vSize = (int)(dataPos.size() - trainingDataEndIndex - gSize);
 
+	trainingDataNegEndIndex = (int)(0.6 * dataNeg.size());
+	int gNegSize = (int)(ceil(0.2 * dataNeg.size()));
+	int vNegSize = (int)(dataNeg.size() - trainingDataNegEndIndex - gNegSize);
+
+	cout << "Training Data set size is: " << trainingDataEndIndex << " pictures." << endl;
+	cout << "Generalization Data set size is: " << gSize << " pictures." << endl;
+	cout << "Validation Data set size is: " << vSize << " pictures." << endl << endl;
+
+	system("PAUSE");
 	//--------------------------------------------------------------------------------------------------------
 	// generalization set
 	//--------------------------------------------------------------------------------------------------------
@@ -278,16 +272,10 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 	{
 		tSet.generalizationSet.push_back(dataPos[i]);
 	}
-	for (int i = 0; i < (int)(dataNeg.size()); i++)
+	for (int i = trainingDataNegEndIndex; i < trainingDataNegEndIndex + gNegSize; i++)
 	{
 		tSet.generalizationSet.push_back(dataNeg[i]);
 	}
-
-	// trying to push back the pictures which i allready used to lear my NN
-	/*for (int i = 0; i < gSize; i++)
-	{
-		tSet.validationSet.push_back(data[i]);
-	}*/
 
 	//--------------------------------------------------------------------------------------------------------
 	// validation set
@@ -296,20 +284,10 @@ bool dataReader::loadDataFile(const char* filenameNeg, const char* filenamePos, 
 	{
 		tSet.validationSet.push_back(dataPos[i]);
 	}
-	for (int i = 0; i < (int)(dataNeg.size()); i++)
+	for (int i = trainingDataNegEndIndex + gNegSize; i < (int)dataNeg.size(); i++)
 	{
 		tSet.validationSet.push_back(dataNeg[i]);
 	}
-
-	// trying to push back the pictures which i allready used to lear my NN
-	/*for (int i = 0; i < gSize; i++)
-	{
-		tSet.validationSet.push_back(data[i]);
-	}*/
-
-	//slWin.matrixPrintOut(tSet.validationSet(pattern), 1);
-
-	//cout << "Input neurons has to be: " << inputNeuronsSize << '\n';
 
 	return true;
 }
@@ -403,11 +381,13 @@ void dataReader::createStaticDataSet()
 	for (int i = 0; i < trainingDataEndIndex; i++)
 	{
 		tSet.trainingSet.push_back(dataPos[i]);
-		
-		// printing right actualy stored pattern
-		//cout << endl << "Hog matrix angles" << endl;
-		//slWin.matrixPrintOut(tSet.trainingSet[i]->pattern, 8);
 	}
+
+	for (int i = 0; i < trainingDataNegEndIndex; i++)
+	{
+		tSet.trainingSet.push_back(dataNeg[i]);
+	}
+
 }
 /*******************************************************************
 * Create a growing data set (contains only a percentage of entries

@@ -67,7 +67,7 @@ private:
 
 	//log file handle
 	bool loggingEnabled;
-	//std::fstream logFile;
+	std::fstream logFile;
 	int logResolution;
 	int lastEpochLogged;
 
@@ -79,7 +79,7 @@ public:
 	void setTrainingParameters( double lR, double m, bool batch );
 	void setStoppingConditions( int mEpochs, double dAccuracy);
 	void useBatchLearning( bool flag ){ useBatch = flag; }
-	//void enableLogging( const char* filename, int resolution );
+	void enableLogging( const char* filename, int resolution );
 
 	void trainNetwork( trainingDataSet* tSet );
 

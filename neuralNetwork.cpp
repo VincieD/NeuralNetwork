@@ -3,7 +3,9 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+#include <iomanip>      // std::setprecision
 #include "stdafx.h"
+#include <string>
 
 //include definition file
 #include "neuralNetwork.h"
@@ -74,16 +76,30 @@ neuralNetwork::~neuralNetwork()
 * Feed pattern through network and return results
 * Return - pointer to array of int (zeros and ones - based on clampOutput function)
 ********************************************************************/
-int* neuralNetwork::feedForwardPattern(std::vector<std::vector<int> >& pattern)
+int* neuralNetwork::feedForwardPattern(std::vector<std::vector<unsigned char> >& pattern)
 {
 	feedForward(pattern);
 
 	//create copy of output results
 	int* results = new int[nOutput];
+	cout << std::fixed << std::setprecision(4) << "ClampOut Neurons: " << outputNeurons[0] << " " << outputNeurons[1] << " " << outputNeurons[2] << endl;
 	for (int i=0; i < nOutput; i++ ) results[i] = clampOutput(outputNeurons[i]);
 
 	return results;
 }
+
+double* neuralNetwork::feedForwardPattern_double(std::vector<std::vector<unsigned char> >& pattern)
+{
+	feedForward(pattern);
+
+	//create copy of output results
+	double* results = new double[nOutput];
+	//cout << std::fixed << std::setprecision(4) << "ClampOut Neurons: " << outputNeurons[0] << " " << outputNeurons[1] << " " << outputNeurons[2] << endl;
+	for (int i = 0; i < nOutput; i++) results[i] = outputNeurons[i];
+
+	return results;
+}
+
 /*******************************************************************
 * Return the NN accuracy on the set
 ********************************************************************/
@@ -193,24 +209,22 @@ inline double neuralNetwork::activationFunction( double x )
 inline int neuralNetwork::clampOutput( double x )
 {
 	if ( x < 0.1 ) return 0;
-	else if ( x > 0.9 ) return 1;
+	else if ( x > 0.90 ) return 1;
 	else return -1;
 }
 /*******************************************************************
 * Feed Forward Operation
 ********************************************************************/
-void neuralNetwork::feedForward(std::vector<std::vector<int> >& window)
+void neuralNetwork::feedForward(std::vector<std::vector<unsigned char> >& window)
 {
 	//set input neurons to input values
 	int index = 0;
-	double value = (double)(window[0][0]/255.0);
 	//std::copy(window.begin(), window.end(), inputNeurons);
 	for (unsigned int ii = 0; ii<window.size(); ii++)
 	{
 		for (unsigned int jj = 0; jj < window[0].size(); jj++)
 		{
-			value = (double)(window[ii].at(jj) / 255.0);
-			inputNeurons[index] = value;
+			inputNeurons[index] = double(window[ii][jj]);
 			index++;
 		}
 	}
@@ -249,4 +263,157 @@ void neuralNetwork::feedForward(std::vector<std::vector<int> >& window)
 	}
 }
 
+/*******************************************************************
+* Load Neuron Weights
+********************************************************************/
+bool neuralNetwork::loadWeights(char* filename)
+{
+	//open file for reading
+	fstream inputFile;
+	long int lineNumber = 0;
+	inputFile.open(filename, ios::in);
+	cout << "Loading the weights from: " << filename << endl;
 
+	if (inputFile.is_open())
+	{
+		vector<double> weights;
+		string line = "";
+
+		//read data
+
+		while (!inputFile.eof())
+		{
+			getline(inputFile, line);
+
+			//process line
+			if (line.length() > 2)
+			{
+				//store inputs		
+				char* cstr = new char[line.size() + 1];
+				char* t;
+				strcpy(cstr, line.c_str());
+
+				//tokenise
+				int i = 0;
+				t = strtok(cstr, ",");
+
+				while (t != NULL)
+				{
+					weights.push_back(atof(t));
+
+					//move token onwards
+					t = strtok(NULL, ",");
+					i++;
+				}
+
+				//free memory
+				delete[] cstr;
+			}
+		}
+
+		//check if sufficient weights were loaded
+		if (weights.size() != ((nInput + 1) * nHidden + (nHidden + 1) * nOutput))
+		{
+			cout << endl << "Error - Incorrect number of weights in input file: " << filename << endl;
+
+			//close file
+			inputFile.close();
+
+			return false;
+		}
+		else
+		{
+			//set weights
+			int pos = 0;
+
+			for (int i = 0; i <= nInput; i++)
+			{
+				for (int j = 0; j < nHidden; j++)
+				{
+					wInputHidden[i][j] = weights[pos++];
+				}
+			}
+
+			for (int i = 0; i <= nHidden; i++)
+			{
+				for (int j = 0; j < nOutput; j++)
+				{
+					wHiddenOutput[i][j] = weights[pos++];
+				}
+			}
+
+			//print success
+			cout << endl << "Neuron weights loaded successfuly from '" << filename << "'" << endl;
+
+			//close file
+			inputFile.close();
+			cout << std::fixed << std::setprecision(3) << wHiddenOutput[0][0] << " " << wHiddenOutput[0][1] << " " << wHiddenOutput[0][2] << " " << wHiddenOutput[1][0] << " " << wHiddenOutput[1][2] << " " << wHiddenOutput[1][3] << " ";
+			return true;
+		}
+	}
+	else
+	{
+		cout << endl << "Error - Weight input file '" << filename << "' could not be opened: " << endl;
+		return false;
+	}
+	
+}
+
+/*******************************************************************
+* Save Neuron Weights
+********************************************************************/
+bool neuralNetwork::saveWeights(char* filename)
+{
+	//open file for reading
+	fstream outputFile;
+	outputFile.open(filename, ios::out);
+
+	if (outputFile.is_open())
+	{
+		outputFile.precision(30);
+
+		//output weights
+		for (int i = 0; i <= nInput; i++)
+		{
+			for (int j = 0; j < nHidden; j++)
+			{
+				outputFile << wInputHidden[i][j] << ",";
+			}
+		}
+
+		for (int i = 0; i <= nHidden; i++)
+		{
+			for (int j = 0; j < nOutput; j++)
+			{
+				outputFile << wHiddenOutput[i][j];
+				if (i * nOutput + j + 1 != (nHidden + 1) * nOutput) outputFile << ",";
+			}
+		}
+
+		//print success
+		cout << endl << "Neuron weights saved to '" << filename << "'" << endl;
+
+		//close file
+		outputFile.close();
+		return true;
+	}
+	else
+	{
+		cout << endl << "Error - Weight output file '" << filename << "' could not be created: " << endl;
+		return false;
+	}
+}
+
+int neuralNetwork::getNumberOfOutputNeurons()
+{
+	return nOutput;
+}
+
+double* neuralNetwork::getResultFromOutputNeuros()
+{
+	double* results = new double[nOutput];
+
+	for (int i = 0; i < nOutput; i++) results[i] = outputNeurons[i];
+
+	return results;
+}

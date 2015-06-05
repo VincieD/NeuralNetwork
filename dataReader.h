@@ -24,7 +24,7 @@ public:
 
 	//public members
 	//----------------------------------------------------------------------------------------------------------------
-	std::vector<std::vector <int> > pattern; // patterns - has to have same number as input neurons
+	std::vector<std::vector <unsigned char> > pattern; // patterns - has to have same number as input neurons
 	std::vector<double> target;						// target - has to have same number as output neurons
 
 public:
@@ -33,7 +33,7 @@ public:
 	//----------------------------------------------------------------------------------------------------------------
 
 	//constructor
-	dataEntry(std::vector<std::vector <int> >p, std::vector<double>t) : pattern(p), target(t) {}
+	dataEntry(std::vector<std::vector <unsigned char> >p, std::vector<double>t) : pattern(p), target(t) {}
 
 };
 
@@ -85,6 +85,7 @@ private:
 	int creationApproach;
 	int numTrainingSets;
 	int trainingDataEndIndex;
+	int trainingDataNegEndIndex;
 
 	//creation approach variables
 	double growingStepSize;			//step size - percentage of total set
